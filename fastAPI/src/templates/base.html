@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Email Clicks</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/normalize/8.0.1/normalize.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/skeleton/2.0.4/skeleton.min.css">
+    <style>
+        body {
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+            margin: 0;
+        }
+        header, footer {
+            text-align: center;
+            background-color: #f4f4f4;
+            padding: 1em 0;
+        }
+        main {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 2em 0;
+        }
+        .container {
+            width: 100%;
+            max-width: 1200px;
+            padding: 0 1em;
+        }
+        table {
+            width: 100%;
+        }
+        #chart-container, #stats-container {
+            width: 100%;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        .flex-container {
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Email Click Tracker</h1>
+    </header>
+    {% if emails %}
+    <div class="flex-container">
+        <div id="chart-container">
+            <img src="/clicks_piechart" alt="Clicks Pie Chart">
+        </div>
+        <div id="stats-container">
+            <h3>Statistics for Used Emails</h3>
+            <p>Total Emails Sent: {{ stats.total_attempts }}</p>
+            <p>Total Clicks: {{ stats.total_clicks }}</p>
+            <p>Number of Emails Successfully Send: {{ stats.successfully_send_emails }}</p>
+            <p>Number of Emails Clicked At Least Once: {{ stats.clicked_emails }}</p>
+            <p>Number of Emails Not Clicked: {{ stats.not_clicked_emails }}</p>
+            <h3>Statistics for Not Used Emails</h3>
+            <p>Number of Emails Not Valid: {{ stats.not_valid_emails }}</p>
+            <p>Number of Emails Not Reachable: {{ stats.not_reachable_emails }}</p>
+            <p>Number of Emails Not Send At Least Once: {{ stats.not_send_emails }}</p>
+        </div>
+    </div>
+    {% endif %}
+    <main>
+        {% block content %}
+        {% endblock %}
+    </main>
+    <footer>
+        <p>© 2024 Email Click Tracker</p>
+    </footer>
+    <script>
+        const baseUrl = window.location.origin;
+
+        function sendEmails() {
+            fetch(baseUrl + '/sendEmails', {
+                method: 'POST',
+            })
+            .then(async response => {
+                const data = await response.json();
+                if (response.ok) {
+                    alert(data.message);
+                    location.reload();
+                } else {
+                    if (data.error) {
+                        alert(`Failed: ${data.error}`);
+                    } else {
+                        alert(`Warning: ${data.message}`);
+                    }
+                }
+            })
+            .catch(error => {
+                alert(`Failed: ${error.message}`);
+            });
+            checkTaskStatus()
+        }
+
+        function sendEmailsWithNoAttempts() {
+            fetch(baseUrl + '/sendEmailsWithNoAttempts', {
+                method: 'POST',
+            })
+            .then(async response => {
+                const data = await response.json();
+                if (response.ok) {
+                    alert(data.message);
+                    location.reload();
+                } else {
+                    if (data.error) {
+                        alert(`Failed: ${data.error}`);
+                    } else {
+                        alert(`Warning: ${data.message}`);
+                    }
+                }
+            })
+            .catch(error => {
+                alert(`Failed: ${error.message}`);
+            });
+            checkTaskStatus()
+        }
+        
+        function loadEmails() {
+            fetch(baseUrl + '/loadEmails', {
+                method: 'POST',
+            })
+            .then(async response => {
+                const data = await response.json();
+                if (response.ok) {
+                    alert(data.message);
+                    location.reload();
+                } else {
+                    if (data.error) {
+                        alert(`Failed: ${data.error}`);
+                    } else {
+                        alert(`Warning: ${data.message}`);
+                    }
+                }
+            })
+            .catch(error => {
+                alert(`Failed: ${error.message}`);
+            });
+            checkTaskStatus()
+        }
+
+        function updateReachable() {
+            fetch(baseUrl + '/updateReachable', {
+                method: 'POST',
+            })
+            .then(async response => {
+                const data = await response.json();
+                if (response.ok) {
+                    alert(data.message);
+                    location.reload();
+                } else {
+                    if (data.error) {
+                        alert(`Failed: ${data.error}`);
+                    } else {
+                        alert(`Warning: ${data.message}`);
+                    }
+                }
+            })
+            .catch(error => {
+                alert(`Failed: ${error.message}`);
+            });
+            checkTaskStatus()
+        }
+
+        function checkTaskStatus() {
+            fetch(baseUrl + '/task_status', {
+                method: 'GET',
+            })
+            .then(async response => {
+                const data = await response.json();
+                document.getElementById('task-status').innerText = data.message;
+            })
+            .catch(error => {
+                alert(`Failed to check task status: ${error.message}`);
+            });
+        }
+
+        checkTaskStatus()
+    </script>
+</body>
+</html>

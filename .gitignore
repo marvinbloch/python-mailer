@@ -1,0 +1,27 @@
+# Ignore environment variable files
+.env
+
+# Optionally ignore all .env files
+*.env
+
+# Ignore node_modules directory in JavaScript projects
+node_modules/
+
+# Ignore Python bytecode
+__pycache__/
+*.pyc
+
+
+*.txt
+
+*.png
+
+
+# Ignore build output directories
+build/
+dist/
+
+# Ignore log files and databases
+*.log
+*.sql
+*.sqlite

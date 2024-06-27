@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container">
+    <h2>Email Clicks</h2>
+    <button onclick="checkTaskStatus()">Check Task Status</button>
+    <button onclick="sendEmails()">Send Emails</button>
+    <button onclick="sendEmailsWithNoAttempts()">Send Emails with No Attempts</button>
+    <button onclick="loadEmails()">Load Emails</button>
+    <button onclick="updateReachable()">Update Reachable Status</button>
+    <div id="task-status">The system is free</div>
+    <table class="u-full-width">
+        <thead>
+            <tr>
+                <th>Email</th>
+                <th>Valid</th>
+                <th>Reachable</th>
+                <th>Click Count</th>
+                <th>Successfull Attempts</th>
+                <th>Attempts</th>
+            </tr>
+        </thead>
+        <tbody id="emailTableBody">
+            {% for email in emails %}
+            <tr>
+                <td>{{ email.email }}</td>
+                <td>{{ email.valid }}</td>
+                <td>{{ email.reachable }}</td>
+                <td>{{ email.click_count }}</td>
+                <td>{{ email.success_attempts }}</td>
+                <td>{{ email.attempts }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}
