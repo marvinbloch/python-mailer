@@ -88,11 +88,8 @@ async def send_mail(r : str, message):
     await smtp_client.connect()
     await smtp_client.login(EMAIL_SENDER, EMAIL_PASSWORD)
     try:
-        logger.info("Start mail to ------------- " , r)
         await smtp_client.send_message(message)
-        logger.info("End mail to ------------- " , r)
     except Exception as e:
-        logger.info("Error mail to ------------- " , r, " ", e)
         return False, str(e)
     finally:
         await smtp_client.quit()

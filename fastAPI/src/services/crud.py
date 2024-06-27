@@ -68,10 +68,7 @@ async def create_email_history(db: AsyncSession, email_id: int, tracking_id: str
 
 async def update_email_reachable_status(db: AsyncSession, email_id: int, reachable: bool):
     email: Email = await get_email_by_id(db, email_id)
-    logger.info("what " , email_id, " get ",  email)
-    logger.info("UPDATE " , email_id, " get ", not not email)
     if (email):
-        logger.info("IS not empty " , email_id, " get ", email.reachable)
         email.reachable = reachable
         db.add(email)
         await db.flush()

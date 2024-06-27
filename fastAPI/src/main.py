@@ -148,9 +148,7 @@ async def send_emails_with_no_attempts_endpoint(db: AsyncSession = Depends(get_t
         logger.info("Send only emails, marked as sendable and having no attempts, from the database")
         await asyncio.sleep(1) 
         recipients: List[Email] = await get_all_sendable_emails(db)
-        logger.info(f"all recipients : {[recipient.email for recipient in recipients]}")
         recipients_with_no_attempts: List[Email] = [recipient for recipient in recipients if await has_no_attempts(db, recipient.id)]
-        logger.info(f"all recipients_with_no_attempts {[recipient.email for recipient in recipients_with_no_attempts]}") 
         result = await send_emails_task(db, recipients_with_no_attempts)
         current_task = None
         status_code = 200 if not result["error"] else 500

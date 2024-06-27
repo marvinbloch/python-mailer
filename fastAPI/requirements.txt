@@ -1,0 +1,14 @@
+uvicorn
+sqlalchemy
+asyncpg
+psycopg2-binary
+aiofiles
+python-dotenv
+jinja2
+argon2-cffi
+pycryptodome
+fastapi
+matplotlib
+asyncio
+aiosmtplib
+pillow
