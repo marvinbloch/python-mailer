@@ -12,7 +12,7 @@ from fastapi.staticfiles import StaticFiles
 
 from .utils.piechart import create_piechart
 from .models.models import Email, EmailHistory
-from .config.database import get_task_db, init_db, engine, get_track_db
+from .config.database import get_task_db, init_db, engine, get_track_db, get_sending_task_db, get_laoding_task_db, get_updating_task_db
 from .services.crud import get_all_emails, get_all_sendable_emails, get_histories_by_email_id
 from .tasks.sender_task import send_emails_task
 from .tasks.loading_task import load_emails_to_database_task
@@ -118,7 +118,7 @@ async def get_task_status():
         return JSONResponse(status_code=200, content={"message": "The system is free"})
 
 @app.post("/sendEmails", response_class=JSONResponse)
-async def send_emails_endpoint(db: AsyncSession = Depends(get_task_db)):
+async def send_emails_endpoint(db: AsyncSession = Depends(get_sending_task_db)):
     global current_task
     if action_lock.locked():
         return JSONResponse(status_code=429, content={"message": f"{current_task.capitalize()} Task is already running. Please wait until it finishes."})
@@ -133,12 +133,13 @@ async def send_emails_endpoint(db: AsyncSession = Depends(get_task_db)):
         status_code = 200 if not result["error"] else 500
         return JSONResponse(status_code=status_code, content=result)
 
-async def has_no_attempts(db: AsyncSession, email_id: int) -> bool:
+async def has_no_successfull_attempts(db: AsyncSession, email_id: int) -> bool:
     histories = await get_histories_by_email_id(db, email_id)
-    return len(histories) == 0  
+    success_attempts = sum((1 if history.success else 0) for history in histories) if histories else 0
+    return success_attempts == 0  
 
 @app.post("/sendEmailsWithNoAttempts", response_class=JSONResponse)
-async def send_emails_with_no_attempts_endpoint(db: AsyncSession = Depends(get_task_db)):
+async def send_emails_with_no_attempts_endpoint(db: AsyncSession = Depends(get_sending_task_db)):
     global current_task
     if action_lock.locked():
         return JSONResponse(status_code=429, content={"message": f"{current_task.capitalize()} Task is already running. Please wait until it finishes."})
@@ -148,14 +149,14 @@ async def send_emails_with_no_attempts_endpoint(db: AsyncSession = Depends(get_t
         logger.info("Send only emails, marked as sendable and having no attempts, from the database")
         await asyncio.sleep(1) 
         recipients: List[Email] = await get_all_sendable_emails(db)
-        recipients_with_no_attempts: List[Email] = [recipient for recipient in recipients if await has_no_attempts(db, recipient.id)]
+        recipients_with_no_attempts: List[Email] = [recipient for recipient in recipients if await has_no_successfull_attempts(db, recipient.id)]
         result = await send_emails_task(db, recipients_with_no_attempts)
         current_task = None
         status_code = 200 if not result["error"] else 500
         return JSONResponse(status_code=status_code, content=result)
 
 @app.post("/loadEmails", response_class=JSONResponse)
-async def send_emails_endpoint(db: AsyncSession = Depends(get_task_db)):
+async def send_emails_endpoint(db: AsyncSession = Depends(get_laoding_task_db)):
     global current_task
     if action_lock.locked():
         return JSONResponse(status_code=429, content={"message": f"{current_task.capitalize()} Task is already running. Please wait until it finishes."})
@@ -170,7 +171,7 @@ async def send_emails_endpoint(db: AsyncSession = Depends(get_task_db)):
         return JSONResponse(status_code=status_code, content={"message": "Emails loaded successfully"})
 
 @app.post("/updateReachable", response_class=JSONResponse)
-async def update_reachable_endpoint(db: AsyncSession = Depends(get_task_db)):
+async def update_reachable_endpoint(db: AsyncSession = Depends(get_updating_task_db)):
     global current_task
     if action_lock.locked():
         return JSONResponse(status_code=429, content={"message": f"{current_task.capitalize()} Task is already running. Please wait until it finishes."})

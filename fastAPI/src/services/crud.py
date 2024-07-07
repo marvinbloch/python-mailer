@@ -75,6 +75,11 @@ async def update_email_reachable_status(db: AsyncSession, email_id: int, reachab
         await db.refresh(email)
     return email
 
+async def update_email_reachable_status_object(db: AsyncSession, email: Email, reachable: bool):
+    email.reachable = reachable
+    await db.commit()
+    await db.refresh(email)
+
 async def update_history_clicks(db: AsyncSession, history: EmailHistory) -> EmailHistory:
     history.click_count += 1
     db.add(history)

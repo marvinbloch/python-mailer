@@ -8,13 +8,31 @@ from .config import POSTGRES_USER, POSTGRES_PASSWORD,POSTGRES_HOST, POSTGRES_POR
 DATABASE_URL = f"postgresql+asyncpg://{POSTGRES_USER}:{POSTGRES_PASSWORD}@{POSTGRES_HOST}:{POSTGRES_PORT}/{POSTGRES_DB}"
 
 engine = create_async_engine(DATABASE_URL, echo=True)
+
 TaskSessionLocal = sessionmaker(
     expire_on_commit=False,
     bind=engine, 
     class_=AsyncSession
 )
 
-# Separate session for tracking
+LoadingTaskSessionLocal = sessionmaker(
+    expire_on_commit=False,
+    bind=engine, 
+    class_=AsyncSession
+)
+
+UpdateTaskSessionLocal = sessionmaker(
+    expire_on_commit=False,
+    bind=engine, 
+    class_=AsyncSession
+)
+
+SendingTaskSessionLocal = sessionmaker(
+    expire_on_commit=False,
+    bind=engine, 
+    class_=AsyncSession
+)
+
 TrackSessionLocal = sessionmaker(
     expire_on_commit=False,
     bind=engine,
@@ -23,8 +41,21 @@ TrackSessionLocal = sessionmaker(
 
 Base = declarative_base()
 
+
 async def get_task_db():
     async with TaskSessionLocal() as session:
+        yield session
+
+async def get_sending_task_db():
+    async with SendingTaskSessionLocal() as session:
+        yield session
+
+async def get_laoding_task_db():
+    async with SendingTaskSessionLocal() as session:
+        yield session
+
+async def get_updating_task_db():
+    async with SendingTaskSessionLocal() as session:
         yield session
 
 async def get_track_db():
