@@ -19,6 +19,7 @@ from .tasks.loading_task import load_emails_to_database_task
 from .config.logging_setup import logger
 from .tasks.update_reachable_task import update_reachable_emails_task
 from .utils.tracking import track_click_func
+from .config.config import WAIT_TIME
 
 app = FastAPI()
 
@@ -28,6 +29,8 @@ app.mount("/public", StaticFiles(directory="src/public"), name="public")
 
 action_lock = asyncio.Lock()
 current_task = None
+total_emails = 0
+emails_sent = 0
 
 @app.on_event("startup")
 async def on_startup():
@@ -109,26 +112,51 @@ async def clicks_piechart(db: AsyncSession = Depends(get_task_db)):
     await create_piechart(db)
     return FileResponse("src/public/piechart.png")
 
+def convert_seconds(sec):
+    days = sec // (24 * 3600)
+    sec %= (24 * 3600)
+    hours = sec // 3600
+    sec %= 3600
+    minutes = sec // 60
+    sec %= 60
+    seconds = sec
+    return days, hours, minutes, seconds
+
 @app.get("/task_status", response_class=JSONResponse)
 async def get_task_status():
-    global current_task
+    global current_task, total_emails, emails_sent
     if action_lock.locked():
-        return JSONResponse(status_code=200, content={"message": f"Current task: {current_task.capitalize()} is running"})
+        if ("Sending" in current_task.capitalize()):
+            remaining_emails = total_emails - emails_sent
+            estimated_time_seconds  = remaining_emails * (WAIT_TIME + 1)
+            days, hours, minutes, seconds = convert_seconds(estimated_time_seconds)
+            time_str = f"{days} days, {hours} hours, {minutes} minutes, {seconds} seconds"
+            return JSONResponse(status_code=200, content={
+                "message": f"Current task: {current_task.capitalize()} is running. \n {remaining_emails} emails left to send {emails_sent} / {total_emails}. \n Estimated time remaining: {time_str}."
+            })
+        else:
+            return JSONResponse(status_code=200, content={"message": f"Current task: {current_task.capitalize()} is running"})
     else:
         return JSONResponse(status_code=200, content={"message": "The system is free"})
+    
+async def update_progress():
+    global emails_sent
+    emails_sent += 1
 
 @app.post("/sendEmails", response_class=JSONResponse)
 async def send_emails_endpoint(db: AsyncSession = Depends(get_sending_task_db)):
-    global current_task
+    global current_task, total_emails, emails_sent
     if action_lock.locked():
         return JSONResponse(status_code=429, content={"message": f"{current_task.capitalize()} Task is already running. Please wait until it finishes."})
 
     async with action_lock:
         current_task="sending"
+        emails_sent = 0
         logger.info("Send only emails, marked as sendable, from the database")
         await asyncio.sleep(1) 
         recipients: List[Email] = await get_all_sendable_emails(db)
-        result = await send_emails_task(db, recipients)
+        total_emails = len(recipients)
+        result = await send_emails_task(db, recipients, update_progress)
         current_task = None
         status_code = 200 if not result["error"] else 500
         return JSONResponse(status_code=status_code, content=result)
@@ -140,17 +168,19 @@ async def has_no_successfull_attempts(db: AsyncSession, email_id: int) -> bool:
 
 @app.post("/sendEmailsWithNoAttempts", response_class=JSONResponse)
 async def send_emails_with_no_attempts_endpoint(db: AsyncSession = Depends(get_sending_task_db)):
-    global current_task
+    global current_task, total_emails, emails_sent
     if action_lock.locked():
         return JSONResponse(status_code=429, content={"message": f"{current_task.capitalize()} Task is already running. Please wait until it finishes."})
 
     async with action_lock:
         current_task="sending no attempts"
+        emails_sent = 0
         logger.info("Send only emails, marked as sendable and having no attempts, from the database")
         await asyncio.sleep(1) 
         recipients: List[Email] = await get_all_sendable_emails(db)
         recipients_with_no_attempts: List[Email] = [recipient for recipient in recipients if await has_no_successfull_attempts(db, recipient.id)]
-        result = await send_emails_task(db, recipients_with_no_attempts)
+        total_emails = len(recipients_with_no_attempts)
+        result = await send_emails_task(db, recipients_with_no_attempts, update_progress)
         current_task = None
         status_code = 200 if not result["error"] else 500
         return JSONResponse(status_code=status_code, content=result)

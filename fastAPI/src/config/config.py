@@ -30,7 +30,9 @@ REDIRECT_URL_FILE_PATH = os.path.join(os.path.dirname(__file__), '..', 'data', '
 
 PIECHART_FILE_PATH = os.path.join(os.path.dirname(__file__), '..', 'public', 'piechart.png')
 
-EMAIL_TEMPLATE_PATH = os.path.join(os.path.dirname(__file__), '..', 'templates', 'mail.html')   
+EMAIL_TEMPLATE_PATH = os.path.join(os.path.dirname(__file__), '..', 'templates', 'mail.html')  
+
+WAIT_TIME = 30
 
 #SMTP TLS ?
 

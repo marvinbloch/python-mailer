@@ -11,15 +11,18 @@ from ..services.crud import create_email_history, generate_unique_tracking_id, u
 from ..models.models import Email
 from ..utils.readFiles import load_template, load_subject, load_redirect_url
 from ..utils.validatorEmail import check_reachable
-from ..config.config import SMTP_SERVER, SMTP_PORT, EMAIL_SENDER, EMAIL_PASSWORD, SERVER_URL, EMAIL_TEMPLATE_PATH, SUBJECT_FILE_PATH, REDIRECT_URL_FILE_PATH
+from ..config.config import SMTP_SERVER, SMTP_PORT, EMAIL_SENDER, EMAIL_PASSWORD, SERVER_URL, EMAIL_TEMPLATE_PATH, SUBJECT_FILE_PATH, REDIRECT_URL_FILE_PATH, WAIT_TIME
 
 from ..config.logging_setup import logger
 
-async def send_emails_task(db, recipients: List[Email]):
+async def send_emails_task(db, recipients: List[Email], progress_callback):
     try:
         if recipients:
-            tasks = [send_single_email(db, recipient) for recipient in recipients]
-            await asyncio.gather(*tasks)
+            for recipient in recipients:
+                await send_single_email(db, recipient)
+                logger.info(f"Email sent to {recipient.email}. Waiting for 30 seconds...")
+                await progress_callback() 
+                await asyncio.sleep(WAIT_TIME)
             logger.info("Sending Task ended successfull")
         else:
             logger.info("Sending Task stopped: No Emails to send")
